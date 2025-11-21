@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { LatLng } from "leaflet";
 import Map from "./Map";
 import SearchBar from "./SearchBar";
+import WeatherPanel from "./WeatherPanel";
 import "./App.css";
 
 import type { LatLngExpression } from "leaflet";
@@ -27,44 +28,31 @@ interface OverpassElement {
   };
 }
 
+export interface WeatherData {
+  temp: number;
+  feelsLike: number;
+  description: string;
+  icon: string;
+  humidity: number;
+  windSpeed: number;
+  city?: string;
+}
+
+const DEFAULT_CENTER: [number, number] = [10.7769, 106.7009]; // HCMC
+
 function App() {
-  const defaultPosition: LatLngExpression = [10.7769, 106.7009]; // HCMC
-
-  // All the state now lives in App.tsx
   const [searchCenter, setSearchCenter] =
-    useState<LatLngExpression>(defaultPosition);
+    useState<LatLngExpression>(DEFAULT_CENTER);
   const [cafes, setCafes] = useState<Cafe[]>([]);
-  const [isLoading, setIsLoading] = useState(true); // Start true on first load
+  const [isLoading, setIsLoading] = useState(true);
   const [routeDestination, setRouteDestination] = useState<LatLng | null>(null);
+  const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [isWeatherLoading, setIsWeatherLoading] = useState(false);
+  const [weatherError, setWeatherError] = useState<string | null>(null);
 
-  // Effect to get GPS location on load
-  useEffect(() => {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        setSearchCenter([latitude, longitude]); // This triggers the cafe search
-      },
-      (err) => {
-        console.warn(`ERROR(${err.code}): ${err.message}`);
-        setSearchCenter(defaultPosition); // Triggers search at default
-      },
-      { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 },
-    );
-  }, []); // Runs once on load
-
-  // Effect to fetch cafes when searchCenter changes
-  useEffect(() => {
-    // Type guard
-    if (!Array.isArray(searchCenter)) return;
-
-    const [lat, lng] = searchCenter;
-    fetchCafes(lat, lng);
-  }, [searchCenter]); // Runs every time searchCenter changes!
-
-  // The fetch function (moved from Map.tsx)
-  const fetchCafes = async (lat: number, lng: number) => {
+  const fetchCafes = useCallback(async (lat: number, lng: number) => {
     setIsLoading(true);
-    setCafes([]); // Clear old cafes
+    setCafes([]);
 
     const radius = 1000;
     const query = `
@@ -86,8 +74,8 @@ function App() {
       const data = await response.json();
       const cafeList: Cafe[] = data.elements.map((el: OverpassElement) => ({
         id: el.id,
-        lat: el.lat || el.center!.lat, // 'way' uses 'center.lat'
-        lon: el.lon || el.center!.lon, // 'way' uses 'center.lon'
+        lat: el.lat || el.center!.lat,
+        lon: el.lon || el.center!.lon,
         name: el.tags.name || "Coffee Shop",
       }));
       setCafes(cafeList);
@@ -96,19 +84,90 @@ function App() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  // Handlers to pass down to children
+  const fetchWeather = useCallback(async (lat: number, lon: number) => {
+    setIsWeatherLoading(true);
+    const apiKey = import.meta.env.VITE_OPENWEATHER_API_KEY;
 
-  // For the SearchBar
+    if (!apiKey) {
+      setWeather(null);
+      setWeatherError("Missing OpenWeather API key");
+      setIsWeatherLoading(false);
+      return;
+    }
+
+    setWeatherError(null);
+
+    const params = new URLSearchParams({
+      lat: lat.toString(),
+      lon: lon.toString(),
+      units: "metric",
+      appid: apiKey,
+    });
+
+    try {
+      const response = await fetch(
+        `https://api.openweathermap.org/data/2.5/weather?${params.toString()}`,
+      );
+
+      if (!response.ok) {
+        throw new Error(`Weather request failed: ${response.status}`);
+      }
+
+      const payload = await response.json();
+      const weatherEntry = payload.weather?.[0];
+
+      setWeather({
+        temp: payload.main?.temp ?? 0,
+        feelsLike: payload.main?.feels_like ?? 0,
+        description: weatherEntry?.description ?? "Unavailable",
+        icon: weatherEntry?.icon ?? "",
+        humidity: payload.main?.humidity ?? 0,
+        windSpeed: payload.wind?.speed ?? 0,
+        city: payload.name,
+      });
+    } catch (error) {
+      console.error("Failed to fetch weather:", error);
+      setWeather(null);
+      setWeatherError("Unable to load weather data");
+    } finally {
+      setIsWeatherLoading(false);
+    }
+  }, []);
+
+  const refreshLocationData = useCallback(
+    (lat: number, lon: number) => {
+      setSearchCenter([lat, lon]);
+      fetchCafes(lat, lon);
+      fetchWeather(lat, lon);
+    },
+    [fetchCafes, fetchWeather],
+  );
+
+  useEffect(() => {
+    refreshLocationData(DEFAULT_CENTER[0], DEFAULT_CENTER[1]);
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        refreshLocationData(latitude, longitude);
+      },
+      (err) => {
+        console.warn(`ERROR(${err.code}): ${err.message}`);
+        refreshLocationData(DEFAULT_CENTER[0], DEFAULT_CENTER[1]);
+      },
+      { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 },
+    );
+  }, [refreshLocationData]);
+
   const handleSearch = (lat: number, lon: number) => {
-    setSearchCenter([lat, lon]);
+    refreshLocationData(lat, lon);
   };
 
-  // For the Map (clicking)
   const handleMapClick = (lat: number, lon: number) => {
-    setSearchCenter([lat, lon]);
     setRouteDestination(null);
+    refreshLocationData(lat, lon);
   };
 
   const handleSetRoute = (cafe: Cafe) => {
@@ -118,11 +177,15 @@ function App() {
   return (
     <div className="App">
       <SearchBar onSearch={handleSearch} isLoading={isLoading} />
+      <WeatherPanel
+        weather={weather}
+        isLoading={isWeatherLoading}
+        error={weatherError}
+      />
       <Map
         searchCenter={searchCenter}
         cafes={cafes}
         onLocationSelect={handleMapClick}
-        // NEW: Pass down the new state and handler
         routeDestination={routeDestination}
         onSetRoute={handleSetRoute}
       />
