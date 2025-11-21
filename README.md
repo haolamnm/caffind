@@ -8,6 +8,16 @@ Caffind is a web application that allows users to search for coffee shops in the
 
 The application is built using React and OpenStreetMap API for location services.
 
+### Configuration
+
+Create a `.env` file in the project root with your OpenWeather API key:
+
+```
+VITE_OPENWEATHER_API_KEY=your_api_key_here
+```
+
+You can obtain a key by registering at [OpenWeather](https://openweathermap.org/api).
+
 ### Development
 
 Command to run the project:
