@@ -59,9 +59,7 @@ const buildAmenitySelectors = (
 ) =>
   AMENITY_FILTERS.map(
     (amenity) => `
-        node["amenity"="${amenity}"](around:${radius},${lat},${lng});
-        way["amenity"="${amenity}"](around:${radius},${lat},${lng});
-        relation["amenity"="${amenity}"](around:${radius},${lat},${lng});
+        nwr["amenity"="${amenity}"](around:${radius},${lat},${lng});
       `,
   ).join("");
 
@@ -81,7 +79,7 @@ function App() {
 
     const radius = 1000;
     const query = `
-      [out:json];(
+      [out:json][timeout:25];(
 ${buildAmenitySelectors(radius, lat, lng)}
       ); out center;
     `;
@@ -91,7 +89,21 @@ ${buildAmenitySelectors(radius, lat, lng)}
         method: "POST",
         body: query,
       });
-      const data = await response.json();
+      const raw = await response.text();
+
+      if (!response.ok) {
+        throw new Error(
+          `Overpass request failed: ${response.status} ${response.statusText} - ${raw.slice(0, 200)}`,
+        );
+      }
+
+      let data;
+      try {
+        data = JSON.parse(raw);
+      } catch (parseError) {
+        console.error("Overpass returned invalid JSON payload", parseError, raw.slice(0, 200));
+        throw new Error("Overpass returned invalid JSON payload");
+      }
       const cafeList: Cafe[] = data.elements.map((el: OverpassElement) => ({
         id: el.id,
         lat: el.lat || el.center!.lat,
