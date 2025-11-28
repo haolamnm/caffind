@@ -39,6 +39,31 @@ export interface WeatherData {
 }
 
 const DEFAULT_CENTER: [number, number] = [10.7769, 106.7009]; // HCMC
+const AMENITY_FILTERS = [
+  "cafe",
+  "coffee_shop",
+  "bar",
+  "biergarten",
+  "milk_tea_shop",
+  "milk-tea shop",
+  "restaurant;cafe",
+  "cafe;restaurant",
+  "tea",
+  "tea_room",
+];
+
+const buildAmenitySelectors = (
+  radius: number,
+  lat: number,
+  lng: number,
+) =>
+  AMENITY_FILTERS.map(
+    (amenity) => `
+        node["amenity"="${amenity}"](around:${radius},${lat},${lng});
+        way["amenity"="${amenity}"](around:${radius},${lat},${lng});
+        relation["amenity"="${amenity}"](around:${radius},${lat},${lng});
+      `,
+  ).join("");
 
 function App() {
   const [searchCenter, setSearchCenter] =
@@ -57,12 +82,7 @@ function App() {
     const radius = 1000;
     const query = `
       [out:json];(
-        node["amenity"="cafe"](around:${radius},${lat},${lng});
-        way["amenity"="cafe"](around:${radius},${lat},${lng});
-        relation["amenity"="cafe"](around:${radius},${lat},${lng});
-        node["amenity"="coffee_shop"](around:${radius},${lat},${lng});
-        way["amenity"="coffee_shop"](around:${radius},${lat},${lng});
-        relation["amenity"="coffee_shop"](around:${radius},${lat},${lng});
+${buildAmenitySelectors(radius, lat, lng)}
       ); out center;
     `;
 
