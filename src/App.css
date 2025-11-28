@@ -7,25 +7,113 @@
   overflow: hidden;
 }
 
-/* --- Weather Panel --- */
-.weather-panel {
+.App {
+  height: 100%;
+  width: 100%;
+  position: relative;
+}
+
+.utility-toggle {
   position: absolute;
   top: var(--spacing-lg);
   right: var(--spacing-lg);
-  z-index: 1000;
+  z-index: 1100;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  border: none;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
 
+.utility-toggle span {
+  position: absolute;
+  left: 50%;
+  width: 24px;
+  height: 2px;
+  background: var(--color-text-primary);
+  border-radius: 999px;
+  transform: translateX(-50%);
+  transition: transform 0.3s ease, opacity 0.3s ease, top 0.3s ease;
+}
+
+.utility-toggle span:nth-child(1) {
+  top: 17px;
+}
+
+.utility-toggle span:nth-child(2) {
+  top: 24px;
+}
+
+.utility-toggle span:nth-child(3) {
+  top: 31px;
+}
+
+.utility-toggle.is-open span:nth-child(1) {
+  top: 24px;
+  transform: translate(-50%, 0) rotate(45deg);
+}
+
+.utility-toggle.is-open span:nth-child(2) {
+  opacity: 0;
+}
+
+.utility-toggle.is-open span:nth-child(3) {
+  top: 24px;
+  transform: translate(-50%, 0) rotate(-45deg);
+}
+
+.utility-panel {
+  position: absolute;
+  top: calc(var(--spacing-lg) + 64px);
+  right: calc(var(--spacing-lg) + 56px);
+  width: 320px;
+  max-width: calc(100vw - 48px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  z-index: 1050;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  box-sizing: border-box; /* Ensure consistent box model */
+}
+
+.utility-panel.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-16px);
+}
+
+.utility-panel.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+/* --- Weather Panel --- */
+.weather-panel {
+  position: relative;
+  z-index: 1;
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   border: var(--glass-border);
   box-shadow: var(--glass-shadow);
   border-radius: var(--radius-lg);
-
   color: var(--color-text-primary);
   padding: var(--spacing-md);
-  width: 260px;
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
   text-align: left;
   transition: all 0.3s ease;
+  margin: 0; /* Reset any potential margins */
 }
 
 .weather-panel:hover {
@@ -97,23 +185,18 @@
 
 /* --- Search Container --- */
 .search-container {
-  position: absolute;
-  top: var(--spacing-lg);
-  left: var(--spacing-lg);
-  z-index: 1000;
-
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   border: var(--glass-border);
   box-shadow: var(--glass-shadow);
   border-radius: var(--radius-lg);
-
   padding: var(--spacing-sm);
   display: flex;
-  gap: var(--spacing-sm);
-  width: 380px;
-  max-width: calc(100vw - 48px);
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  width: 100%;
+  box-sizing: border-box; /* Ensure padding doesn't add to width */
   transition: all 0.3s ease;
 }
 
@@ -122,8 +205,18 @@
   transform: translateY(-1px);
 }
 
-.search-container input {
+.search-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.search-field {
   flex: 1;
+}
+
+.search-field input {
+  width: 100%;
   border: none;
   background: transparent;
   padding: 12px 16px;
@@ -133,39 +226,113 @@
   outline: none;
 }
 
-.search-container input::placeholder {
+.search-field input::placeholder {
   color: var(--color-text-secondary);
 }
 
-.search-container button {
-  padding: 10px 20px;
-  border-radius: var(--radius-md);
-  font-size: 15px;
-  font-weight: 600;
-  background: var(--color-accent);
-  box-shadow: none;
+.search-actions {
+  display: flex;
+  gap: var(--spacing-xs);
 }
 
-.search-container button:hover {
+.search-action {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.search-action:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.search-action:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.search-action--primary {
+  background: var(--color-accent);
+  color: white;
+}
+
+.search-action--primary:hover {
   background: var(--color-accent-hover);
+}
+
+.search-action__spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: white;
+  animation: spin 0.8s linear infinite;
+}
+
+.search-feedback {
+  min-height: 20px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  padding: 0 var(--spacing-sm);
+}
+
+.search-feedback small {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.search-feedback--error {
+  color: #d7263d;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* --- Mobile Responsiveness --- */
 @media (max-width: 768px) {
-  .search-container {
-    top: auto;
-    bottom: var(--spacing-lg);
-    left: var(--spacing-lg);
-    right: var(--spacing-lg);
+  .utility-toggle {
+    top: var(--spacing-sm);
+    right: var(--spacing-sm);
+  }
+
+  .utility-panel {
+    top: calc(var(--spacing-lg) + 56px);
+    left: var(--spacing-sm);
+    right: var(--spacing-sm);
     width: auto;
     max-width: none;
   }
 
+  .search-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-xs);
+  }
+
+  .search-actions {
+    width: 100%;
+  }
+
+  .search-action {
+    flex: 1;
+  }
+
   .weather-panel {
-    top: var(--spacing-lg);
-    left: var(--spacing-lg);
-    right: var(--spacing-lg);
-    width: auto;
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -224,7 +391,3 @@
   padding: 8px;
 }
 
-.search-container button:disabled {
-  background-color: #cccccc;
-  cursor: not-allowed;
-}

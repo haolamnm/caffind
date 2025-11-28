@@ -92,6 +92,16 @@ function Map({ searchCenter, cafes, onLocationSelect, routeDestination, onSetRou
               }}>
                 {cafe.name}
               </strong>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: '13px',
+                  color: '#4a4a4a',
+                  lineHeight: 1.5,
+                }}
+              >
+                {cafe.description}
+              </p>
               <button
                 onClick={() => onSetRoute(cafe)}
                 style={{
