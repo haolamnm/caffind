@@ -23,4 +23,9 @@ dist-ssr
 *.sln
 *.sw?
 
+# Environment variables
 .env
+
+# Python server
+.venv/
+__pycache__/
