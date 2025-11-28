@@ -55,17 +55,6 @@ type MapProps = {
 
 // --- Main Map Component ---
 function Map({ searchCenter, cafes, onLocationSelect, routeDestination, onSetRoute }: MapProps) {
-  const routeButtonStyle = {
-    backgroundColor: '#0078A8',
-    color: 'white',
-    border: 'none',
-    padding: '8px 12px',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    marginTop: '10px',
-    width: '100%'
-  };
-
   return (
     <MapContainer
       className="map-container"
@@ -92,19 +81,37 @@ function Map({ searchCenter, cafes, onLocationSelect, routeDestination, onSetRou
       {/* Render all the cafes */}
       {cafes.map((cafe) => (
         <Marker key={cafe.id} position={[cafe.lat, cafe.lon]} icon={cafeIcon}>
-          <Popup>
-            {/* Cafe name */}
-            <strong style={{fontSize: '16px'}}>{cafe.name}</strong>
-            <br />
-            {/* Get Directions Button */}
-            <button
-              style={routeButtonStyle}
-              onClick={() => {
-                onSetRoute(cafe);
-              }}
-            >
-              Get Directions
-            </button>
+          <Popup className="custom-popup">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '160px' }}>
+              <strong style={{
+                fontSize: '16px',
+                fontWeight: 600,
+                color: '#1d1d1f',
+                marginBottom: '4px',
+                display: 'block'
+              }}>
+                {cafe.name}
+              </strong>
+              <button
+                onClick={() => onSetRoute(cafe)}
+                style={{
+                  backgroundColor: '#0071e3',
+                  color: 'white',
+                  border: 'none',
+                  padding: '8px 12px',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                  fontWeight: 500,
+                  width: '100%',
+                  transition: 'background-color 0.2s'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#0077ed'}
+                onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#0071e3'}
+              >
+                Get Directions
+              </button>
+            </div>
           </Popup>
         </Marker>
       ))}

@@ -34,14 +34,16 @@ function WeatherPanel({ weather, isLoading, error }: WeatherPanelProps) {
             </div>
           </div>
           <div className="weather-panel__meta">
-            <p>Feels like {Math.round(weather.feelsLike)}&deg;C</p>
-            <p>Humidity {weather.humidity}%</p>
-            <p>Wind {Math.round(weather.windSpeed)} m/s</p>
+            <p><span>Feels like</span> {Math.round(weather.feelsLike)}&deg;</p>
+            <p><span>Humidity</span> {weather.humidity}%</p>
+            <p><span>Wind</span> {Math.round(weather.windSpeed)} m/s</p>
           </div>
         </div>
       )}
       {!isLoading && !error && !weather && (
-        <p>Select a location to see weather.</p>
+        <p style={{ color: 'var(--color-text-secondary)', fontSize: '14px' }}>
+          Select a location to see weather.
+        </p>
       )}
     </div>
   );
