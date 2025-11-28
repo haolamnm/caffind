@@ -4,6 +4,7 @@ import Map from "./Map";
 import SearchBar from "./SearchBar";
 import WeatherPanel from "./WeatherPanel";
 import "./App.css";
+import { translateText } from "./utils/translate";
 
 import type { LatLngExpression } from "leaflet";
 
@@ -12,6 +13,7 @@ export interface Cafe {
   lat: number;
   lon: number;
   name: string;
+  description: string;
 }
 
 interface OverpassElement {
@@ -39,6 +41,8 @@ export interface WeatherData {
 }
 
 const DEFAULT_CENTER: [number, number] = [10.7769, 106.7009]; // HCMC
+const DEFAULT_TRANSLATE_LANG =
+  import.meta.env.VITE_DEFAULT_TRANSLATE_LANG || "vi";
 const AMENITY_FILTERS = [
   "cafe",
   "coffee_shop",
@@ -63,6 +67,57 @@ const buildAmenitySelectors = (
       `,
   ).join("");
 
+const buildCafeDescription = (tags: OverpassElement["tags"]) => {
+  const explicit = tags.description?.trim() || tags["short_description"]?.trim();
+  if (explicit) {
+    return explicit;
+  }
+
+  const addressParts = [
+    tags["addr:housenumber"],
+    tags["addr:street"],
+    tags["addr:district"],
+    tags["addr:city"],
+  ].filter(Boolean);
+  const address = addressParts.join(", ");
+
+  const fragments: string[] = [];
+  if (address) {
+    fragments.push(`Located at ${address}`);
+  }
+
+  const cuisine = tags.cuisine
+    ?.split(";")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .join(", ");
+  if (cuisine) {
+    fragments.push(`Serves ${cuisine}`);
+  }
+
+  const amenities: string[] = [];
+  if (tags["internet_access"] === "yes") {
+    amenities.push("Wi-Fi available");
+  } else if (tags["internet_access"] && tags["internet_access"] !== "no") {
+    amenities.push(`Wi-Fi ${tags["internet_access"]}`);
+  }
+
+  if (tags["outdoor_seating"] === "yes") {
+    amenities.push("Outdoor seating");
+  }
+
+  if (amenities.length) {
+    fragments.push(amenities.join(", "));
+  }
+
+  if (tags["opening_hours"]) {
+    fragments.push(`Hours: ${tags["opening_hours"]}`);
+  }
+
+  const summary = fragments.join(" · ");
+  return summary || "Local coffee hangout";
+};
+
 function App() {
   const [searchCenter, setSearchCenter] =
     useState<LatLngExpression>(DEFAULT_CENTER);
@@ -72,6 +127,10 @@ function App() {
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [isWeatherLoading, setIsWeatherLoading] = useState(false);
   const [weatherError, setWeatherError] = useState<string | null>(null);
+  const [areUtilitiesVisible, setAreUtilitiesVisible] = useState(true);
+  const [translation, setTranslation] = useState<string | null>(null);
+  const [translationError, setTranslationError] = useState<string | null>(null);
+  const [isTranslating, setIsTranslating] = useState(false);
 
   const fetchCafes = useCallback(async (lat: number, lng: number) => {
     setIsLoading(true);
@@ -109,6 +168,7 @@ ${buildAmenitySelectors(radius, lat, lng)}
         lat: el.lat || el.center!.lat,
         lon: el.lon || el.center!.lon,
         name: el.tags.name || "Coffee Shop",
+        description: buildCafeDescription(el.tags),
       }));
       setCafes(cafeList);
     } catch (error) {
@@ -177,6 +237,27 @@ ${buildAmenitySelectors(radius, lat, lng)}
     [fetchCafes, fetchWeather],
   );
 
+  const handleTranslateRequest = useCallback(async (text: string) => {
+    setIsTranslating(true);
+    setTranslationError(null);
+    try {
+      const translated = await translateText(text, {
+        target: DEFAULT_TRANSLATE_LANG,
+      });
+      setTranslation(translated);
+    } catch (error) {
+      console.error("Failed to translate text:", error);
+      setTranslation(null);
+      setTranslationError(
+        error instanceof Error
+          ? error.message
+          : "Unable to translate text right now",
+      );
+    } finally {
+      setIsTranslating(false);
+    }
+  }, []);
+
   useEffect(() => {
     refreshLocationData(DEFAULT_CENTER[0], DEFAULT_CENTER[1]);
 
@@ -208,12 +289,38 @@ ${buildAmenitySelectors(radius, lat, lng)}
 
   return (
     <div className="App">
-      <SearchBar onSearch={handleSearch} isLoading={isLoading} />
-      <WeatherPanel
-        weather={weather}
-        isLoading={isWeatherLoading}
-        error={weatherError}
-      />
+      <button
+        type="button"
+        className={`utility-toggle ${areUtilitiesVisible ? "is-open" : ""}`}
+        aria-label="Toggle search and weather panels"
+        aria-pressed={areUtilitiesVisible}
+        onClick={() => setAreUtilitiesVisible((prev) => !prev)}
+      >
+        <span />
+        <span />
+        <span />
+      </button>
+
+      <div
+        className={`utility-panel ${areUtilitiesVisible ? "is-visible" : "is-hidden"}`}
+        aria-hidden={!areUtilitiesVisible}
+      >
+        <WeatherPanel
+          weather={weather}
+          isLoading={isWeatherLoading}
+          error={weatherError}
+        />
+        <SearchBar
+          onSearch={handleSearch}
+          isLoading={isLoading}
+          onTranslate={handleTranslateRequest}
+          translatedText={translation}
+          translationError={translationError}
+          isTranslating={isTranslating}
+          targetLanguage={DEFAULT_TRANSLATE_LANG}
+        />
+      </div>
+
       <Map
         searchCenter={searchCenter}
         cafes={cafes}
