@@ -29,3 +29,7 @@ dist-ssr
 # Python server
 .venv/
 __pycache__/
+
+# Firebase
+.firebaserc
+.firebase/
