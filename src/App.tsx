@@ -3,6 +3,9 @@ import { LatLng } from "leaflet";
 import Map from "./Map";
 import SearchBar from "./SearchBar";
 import WeatherPanel from "./WeatherPanel";
+import { AuthProvider } from "./AuthContext";
+import { AuthModal } from "./AuthModal";
+import { UserMenu } from "./UserMenu";
 import "./App.css";
 import { translateText } from "./utils/translate";
 
@@ -131,6 +134,7 @@ function App() {
   const [translation, setTranslation] = useState<string | null>(null);
   const [translationError, setTranslationError] = useState<string | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   const fetchCafes = useCallback(async (lat: number, lng: number) => {
     setIsLoading(true);
@@ -288,47 +292,58 @@ ${buildAmenitySelectors(radius, lat, lng)}
   };
 
   return (
-    <div className="App">
-      <button
-        type="button"
-        className={`utility-toggle ${areUtilitiesVisible ? "is-open" : ""}`}
-        aria-label="Toggle search and weather panels"
-        aria-pressed={areUtilitiesVisible}
-        onClick={() => setAreUtilitiesVisible((prev) => !prev)}
-      >
-        <span />
-        <span />
-        <span />
-      </button>
+    <AuthProvider>
+      <div className="App">
+        <div className="app-header">
+          <UserMenu onOpenAuth={() => setIsAuthModalOpen(true)} />
+        </div>
 
-      <div
-        className={`utility-panel ${areUtilitiesVisible ? "is-visible" : "is-hidden"}`}
-        aria-hidden={!areUtilitiesVisible}
-      >
-        <WeatherPanel
-          weather={weather}
-          isLoading={isWeatherLoading}
-          error={weatherError}
+        <button
+          type="button"
+          className={`utility-toggle ${areUtilitiesVisible ? "is-open" : ""}`}
+          aria-label="Toggle search and weather panels"
+          aria-pressed={areUtilitiesVisible}
+          onClick={() => setAreUtilitiesVisible((prev) => !prev)}
+        >
+          <span />
+          <span />
+          <span />
+        </button>
+
+        <div
+          className={`utility-panel ${areUtilitiesVisible ? "is-visible" : "is-hidden"}`}
+          aria-hidden={!areUtilitiesVisible}
+        >
+          <WeatherPanel
+            weather={weather}
+            isLoading={isWeatherLoading}
+            error={weatherError}
+          />
+          <SearchBar
+            onSearch={handleSearch}
+            isLoading={isLoading}
+            onTranslate={handleTranslateRequest}
+            translatedText={translation}
+            translationError={translationError}
+            isTranslating={isTranslating}
+            targetLanguage={DEFAULT_TRANSLATE_LANG}
+          />
+        </div>
+
+        <Map
+          searchCenter={searchCenter}
+          cafes={cafes}
+          onLocationSelect={handleMapClick}
+          routeDestination={routeDestination}
+          onSetRoute={handleSetRoute}
         />
-        <SearchBar
-          onSearch={handleSearch}
-          isLoading={isLoading}
-          onTranslate={handleTranslateRequest}
-          translatedText={translation}
-          translationError={translationError}
-          isTranslating={isTranslating}
-          targetLanguage={DEFAULT_TRANSLATE_LANG}
+
+        <AuthModal
+          isOpen={isAuthModalOpen}
+          onClose={() => setIsAuthModalOpen(false)}
         />
       </div>
-
-      <Map
-        searchCenter={searchCenter}
-        cafes={cafes}
-        onLocationSelect={handleMapClick}
-        routeDestination={routeDestination}
-        onSetRoute={handleSetRoute}
-      />
-    </div>
+    </AuthProvider>
   );
 }
 

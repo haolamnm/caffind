@@ -13,6 +13,13 @@
   position: relative;
 }
 
+.app-header {
+  position: absolute;
+  top: var(--spacing-lg);
+  left: var(--spacing-lg);
+  z-index: 1100;
+}
+
 .utility-toggle {
   position: absolute;
   top: var(--spacing-lg);
