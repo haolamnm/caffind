@@ -16,7 +16,7 @@
 .app-header {
   position: absolute;
   top: var(--spacing-lg);
-  left: var(--spacing-lg);
+  right: calc(var(--spacing-lg) + 48px + var(--spacing-md));
   z-index: 1100;
 }
 
