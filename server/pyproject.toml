@@ -7,4 +7,5 @@ dependencies = [
     "firebase-admin>=6.6.0",
     "googletrans>=4.0.2",
     "uvicorn[standard]>=0.38.0",
+    "huggingface-hub>=0.26.0",
 ]

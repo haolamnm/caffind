@@ -6,9 +6,13 @@ import inspect
 import os
 import firebase_admin
 from firebase_admin import auth, credentials
+from huggingface_hub import InferenceClient
 
 app = FastAPI(title="Caffind API", version="0.2.0")
 translator = Translator()
+
+# Hugging Face Inference Client - works without token for free models
+hf_client = InferenceClient()
 
 # Initialize Firebase Admin SDK
 # You can either use a service account JSON file or default credentials
@@ -176,6 +180,44 @@ async def get_current_user_info(current_user: dict = Depends(require_auth)):
         raise HTTPException(status_code=404, detail="User not found")
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
+
+
+# ============== Chat Endpoints ==============
+
+class ChatMessage(BaseModel):
+    role: str
+    content: str
+
+
+class ChatRequest(BaseModel):
+    message: str = Field(..., min_length=1, description="User message")
+    history: list[ChatMessage] | None = Field(None, description="Optional chat history")
+
+
+class ChatResponse(BaseModel):
+    response: str
+
+
+@app.post("/chat", response_model=ChatResponse)
+async def chat(payload: ChatRequest):
+    """Chat with a coffee-focused LLM assistant."""
+    try:
+        messages = [
+            {"role": "system", "content": "You are a friendly coffee expert. Keep answers short."},
+            {"role": "user", "content": payload.message}
+        ]
+        
+        response = hf_client.chat_completion(
+            messages=messages,
+            model="meta-llama/Meta-Llama-3-8B-Instruct",
+            max_tokens=150,
+        )
+        
+        return ChatResponse(response=response.choices[0].message.content)
+        
+    except Exception as exc:
+        print(f"Chat error: {exc}")
+        return ChatResponse(response="Sorry, couldn't connect. Try again!")
 
 
 # Convenience script entry point
