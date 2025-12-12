@@ -4,9 +4,11 @@ import "./Auth.css";
 
 interface UserMenuProps {
   onOpenAuth: () => void;
+  onToggleChat?: () => void;
+  isChatOpen?: boolean;
 }
 
-export function UserMenu({ onOpenAuth }: UserMenuProps) {
+export function UserMenu({ onOpenAuth, onToggleChat, isChatOpen }: UserMenuProps) {
   const { user, loading, logout, deleteAccount } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -81,6 +83,28 @@ export function UserMenu({ onOpenAuth }: UserMenuProps) {
               <div className="user-menu-name">{userName}</div>
               {user.email && <div className="user-menu-email">{user.email}</div>}
             </div>
+
+            <div className="user-menu-divider" />
+
+            <button 
+              className="user-menu-item"
+              onClick={() => {
+                onToggleChat?.();
+                setIsMenuOpen(false);
+              }}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="16"
+                height="16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+              {isChatOpen ? "Close Chat" : "Coffee Chat"}
+            </button>
 
             <div className="user-menu-divider" />
 

@@ -183,12 +183,16 @@
   border-color: #9ca3af;
 }
 
+.auth-social-btn.google {
+  color: #24292f;
+}
+
 .auth-social-btn.google:hover {
   border-color: #4285f4;
 }
 
 .auth-social-btn.github {
-  color: #24292f;
+  color: #24292f;;
 }
 
 .auth-social-btn.github:hover {
@@ -249,7 +253,7 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  border: 2px solid #e5e7eb;
+  border: 2px solid #3b82f6;
   background: linear-gradient(135deg, #3b82f6, #1d4ed8);
   cursor: pointer;
   overflow: hidden;
@@ -257,6 +261,7 @@
   align-items: center;
   justify-content: center;
   transition: border-color 0.2s, transform 0.2s;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
 }
 
 .user-avatar-btn:hover {

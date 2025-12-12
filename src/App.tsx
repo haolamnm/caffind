@@ -3,6 +3,7 @@ import { LatLng } from "leaflet";
 import Map from "./Map";
 import SearchBar from "./SearchBar";
 import WeatherPanel from "./WeatherPanel";
+import ChatPanel from "./ChatPanel";
 import { AuthProvider } from "./AuthContext";
 import { AuthModal } from "./AuthModal";
 import { UserMenu } from "./UserMenu";
@@ -135,6 +136,7 @@ function App() {
   const [translationError, setTranslationError] = useState<string | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isChatVisible, setIsChatVisible] = useState(false);
 
   const fetchCafes = useCallback(async (lat: number, lng: number) => {
     setIsLoading(true);
@@ -295,7 +297,11 @@ ${buildAmenitySelectors(radius, lat, lng)}
     <AuthProvider>
       <div className="App">
         <div className="app-header">
-          <UserMenu onOpenAuth={() => setIsAuthModalOpen(true)} />
+          <UserMenu
+            onOpenAuth={() => setIsAuthModalOpen(true)}
+            onToggleChat={() => setIsChatVisible((prev) => !prev)}
+            isChatOpen={isChatVisible}
+          />
         </div>
 
         <button
@@ -328,6 +334,7 @@ ${buildAmenitySelectors(radius, lat, lng)}
             isTranslating={isTranslating}
             targetLanguage={DEFAULT_TRANSLATE_LANG}
           />
+          <ChatPanel isVisible={isChatVisible} />
         </div>
 
         <Map
