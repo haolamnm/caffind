@@ -86,7 +86,7 @@ export function UserMenu({ onOpenAuth, onToggleChat, isChatOpen }: UserMenuProps
 
             <div className="user-menu-divider" />
 
-            <button 
+            <button
               className="user-menu-item"
               onClick={() => {
                 onToggleChat?.();
