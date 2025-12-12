@@ -29,6 +29,7 @@ dist-ssr
 # Python server
 .venv/
 __pycache__/
+*.egg-info
 
 # Firebase
 .firebaserc
