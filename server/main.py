@@ -206,15 +206,15 @@ async def chat(payload: ChatRequest):
             {"role": "system", "content": "You are a friendly coffee expert. Keep answers short."},
             {"role": "user", "content": payload.message}
         ]
-        
+
         response = hf_client.chat_completion(
             messages=messages,
             model="meta-llama/Meta-Llama-3-8B-Instruct",
             max_tokens=150,
         )
-        
+
         return ChatResponse(response=response.choices[0].message.content)
-        
+
     except Exception as exc:
         print(f"Chat error: {exc}")
         return ChatResponse(response="Sorry, couldn't connect. Try again!")
